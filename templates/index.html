@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор преподавателя</title>
+ 
+</head>
+<body>
+    <h1>Выберите преподавателя</h1>
+    
+    <div id="buttons" >
+        <button class="teacher-btn" data-teacher="teacher1">Ларионов Дмитрий Ильич</button>
+        <button class="teacher-btn" data-teacher="teacher2">Смирнов Евгений Михайлович </button>
+        <button class="teacher-btn" data-teacher="teacher3">Сниховская Ирина Викторовна</button>
+    </div>
+
+    <div class="chat-container" id="chat-container">
+        <h2>Чат с <span id="teacher-name"></span></h2>
+        <div id="chat-box"></div>
+        <input type="text" id="user-message" placeholder="Введите сообщение...">
+        <button id="emoji-btn" onclick="toggleEmojiPanel()">=D</button>
+        <button id="send-message">Отправить</button>
+
+        <div class="emoji-panel" id="emoji-panel" >
+            <span class="emoji" onclick="insertEmoji('😀')">😀</span>
+            <span class="emoji" onclick="insertEmoji('😭')">😭</span>
+            <span class="emoji" onclick="insertEmoji('🤯')">🤯</span>
+            <span class="emoji" onclick="insertEmoji('🤔')">🤔</span>
+            <span class="emoji" onclick="insertEmoji('💥')">💥</span>
+            <span class="emoji" onclick="insertEmoji('👎')">👎</span>
+            <span class="emoji" onclick="insertEmoji('🐋')">🐋</span>
+            <span class="emoji" onclick="insertEmoji('❤️')">❤️</span>
+        </div>
+    </div>
+
+    <script>
+        const teacherButtons = document.querySelectorAll('.teacher-btn');
+        const chatContainer = document.getElementById('chat-container');
+        const teacherName = document.getElementById('teacher-name');
+        const chatBox = document.getElementById('chat-box');
+        const userMessageInput = document.getElementById('user-message');
+        const sendMessageButton = document.getElementById('send-message');
+
+        teacherButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const selectedTeacher = button.getAttribute('data-teacher');
+                chatBox.innerHTML = ""
+                fetch('/select', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teacher: selectedTeacher })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        teacherName.textContent = button.textContent;
+                        chatContainer.style.display = 'block';
+                    }
+                });
+            });
+        });
+
+        sendMessageButton.addEventListener('click', () => {
+            
+            const userMessage = userMessageInput.value;
+            if (userMessage.trim() === "") return;
+
+            chatBox.innerHTML += `<div><b>Студент:</b> ${userMessage}</div>`;
+            userMessageInput.value = '';
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userMessage })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.response) {
+                    chatBox.innerHTML += `<div><b>Преподаватель:</b> ${data.response}</div>`;
+                } else if (data.error) {
+                    alert(data.error);
+                }
+            });
+        });
+        function toggleEmojiPanel() {
+            const emojiPanel = document.getElementById("emoji-panel");
+            emojiPanel.style.display = emojiPanel.style.display === "block" ? "none" : "block";
+        }
+        function insertEmoji(emoji) {
+           userMessageInput.value += emoji;
+            toggleEmojiPanel(); 
+        }
+    </script>
+    <style> 
+      .chat-container {
+            display: none;
+        }
+     #chat-box {
+        height: 300px;
+        overflow-y: scroll;
+        margin-bottom: 10px;
+        padding: 5px;
+        border: 1px solid #eee;
+    }
+    #user-message {
+            width: 80%;
+            padding: 8px;
+        }
+     #send-message {
+            padding: 8px 5px;
+            cursor: pointer;
+            
+        }
+     #chat-container {
+            width: 70%;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        #buttons{
+            align-items: center;
+            padding-left: 15% ;
+        }
+    .teacher-btn{
+        margin-left: 5%;
+        cursor: pointer;
+        height: 30pt;
+        border-width: 2pt;
+    }
+    h1{
+        margin-left: 33%;
+    }
+    button{
+        background-color: rgb(60, 116, 168);
+        border-color:rgb(30, 71, 110);
+        color: white;
+        border-radius: 10px;
+    }
+    #emoji-btn {
+        padding: 8px 3px;
+        width: 5%;
+        cursor: pointer;
+}
+
+.emoji-panel {
+    display: none;
+    position: absolute;
+    bottom: 60px;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    flex-wrap: wrap;
+   
+    justify-content: center;
+}
+
+.emoji {
+    font-size: 24px;
+    cursor: pointer;
+}
+    </style>
+
+</body>
+</html>
