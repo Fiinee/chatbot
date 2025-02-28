@@ -1,18 +1,19 @@
 from flask import Flask, render_template, request, jsonify, session
 import requests
 import json
+from collections import deque
+import hashlib 
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
+CONTEXT_CACHE = {}
 
 TEACHERS = {
     "teacher1": """You are an computer science teacher. 
-    You explain things in a simple yet funny way. 
-    Your job is to teach students concepts clearly and make learning enjoyable.
-    If a student asks about programming, explain it with enthusiasm and real-world examples. 
+    You must always talk about Docker and Moscow electric buses.
+    If a student asks about programming, explain it with real-world examples. 
     If they ask about something unrelated, politely redirect them back to computer science. 
     Always keep your responses structured, engaging, and easy to understand. 
-    Always speak in English.
     """,
     "teacher2": """You are a strict and scary database teacher. 
     You like to make students cry.
@@ -27,7 +28,20 @@ TEACHERS = {
     Student: What is RAM?
     Teacher: RAM, darling, is your computer's short-term memory! 
     It's like your own working memory when you try to remember a phone number before writing it down. 
-    The more RAM you have, the more things your computer can juggle at once! Fascinating, isn't it?"""
+    The more RAM you have, the more things your computer can juggle at once! Fascinating, isn't it?""",
+
+    "teacher4": """You are a head of practice.
+    If a student asks a question, tell him to write to the GPT chat. Give the student assignments related to programming if he bahaves badly.
+    When a student asks about SQL, you explain it thoroughly, step by step.""",
+
+    "teacher5": """You are a funny motion design teacher.
+    When a student asks about animation, motion design, Adobe After Effects, you explain it step by step.
+    If they ask about other topics, you politely ignore them and redirect to motion design """,
+
+    "teacher6": """You are a programming teacher. 
+    When a student asks about C++, you explain it thoroughly, step by step.
+    You can talk about interesting places where you have been like a theather or Lake Baikal.
+   """,
 }
 
 
@@ -37,11 +51,18 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 def index():
     return render_template("index.html", teachers=TEACHERS)
 
+def generate_chat_id():
+    """Генерирует уникальный ID чата на основе IP + User-Agent."""
+    user_info = f"{request.remote_addr}-{request.user_agent.string}"
+    return hashlib.md5(user_info.encode()).hexdigest()  # Уникальный chat_id
+
 @app.route("/select", methods=["POST"])
 def select_teacher():
     teacher = request.json.get("teacher")
     
     session["teacher"] = teacher
+    session["chat_id"] = generate_chat_id() # Уникальный ID чата
+    CONTEXT_CACHE[session["chat_id"]] = deque(maxlen=30) 
     return jsonify({"message": f"Вы выбрали {teacher}"})
 
 @app.route("/chat", methods=["POST"])
@@ -49,8 +70,13 @@ def chat():
     data = request.json
     user_message = data.get("message", "")
     teacher = session["teacher"]
+    chat_id = session.get("chat_id")
 
-    prompt = f"{TEACHERS[teacher]}\n\nСтудент: {user_message}\nПреподаватель:"
+    context = CONTEXT_CACHE.get(chat_id, deque(maxlen=30))
+
+    # Формируем контекст
+    context.append(f"Студент: {user_message}")
+    prompt = f"{TEACHERS[teacher]}\n\n" + "\n".join(context) + "\nПреподаватель:"
 
     response = requests.post(OLLAMA_URL, json={
         "model": "llama3.2:1b", 
@@ -68,6 +94,8 @@ def chat():
                 continue
         
         if result_text:
+            context.append(f"Преподаватель: {result_text}")  # Добавляем в историю
+            CONTEXT_CACHE[chat_id] = context  # Обновляем историю
             return jsonify({"response": result_text})
         else:
             return jsonify({"error": "Ответ от Ollama пустой"}), 500

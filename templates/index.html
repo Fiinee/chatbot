@@ -7,16 +7,29 @@
  
 </head>
 <body>
+    <div id="head">
+    <div class="toggle-container">
+        <button class="theme-btn light" onclick="setTheme('light')" title="Light mode">
+          <img src="https://assets.codepen.io/210284/sun.png" alt="sun">
+        </button>
+        <button class="theme-btn dark" onclick="setTheme('dark')" title="Dark mode">
+          <img src="https://assets.codepen.io/210284/moon.png" alt="moon">
+        </button>
+      </div>
     <h1>Выберите преподавателя</h1>
+</div>
     
     <div id="buttons" >
         <button class="teacher-btn" data-teacher="teacher1">Ларионов Дмитрий Ильич</button>
         <button class="teacher-btn" data-teacher="teacher2">Смирнов Евгений Михайлович </button>
         <button class="teacher-btn" data-teacher="teacher3">Сниховская Ирина Викторовна</button>
+        <button class="teacher-btn" data-teacher="teacher4">Быков Иван Денисович</button>
+        <button class="teacher-btn" data-teacher="teacher5">Ковалева Елизавета Александровна</button>
+        <button class="teacher-btn" data-teacher="teacher6">Емелина Елена Ивановна</button>
     </div>
 
     <div class="chat-container" id="chat-container">
-        <h2>Чат с <span id="teacher-name"></span></h2>
+        <h2><span id="teacher-name"></span></h2>
         <div id="chat-box"></div>
         <input type="text" id="user-message" placeholder="Введите сообщение...">
         <button id="emoji-btn" onclick="toggleEmojiPanel()">=D</button>
@@ -35,6 +48,8 @@
     </div>
 
     <script>
+        const setTheme = theme => document.documentElement.className = theme;
+
         const teacherButtons = document.querySelectorAll('.teacher-btn');
         const chatContainer = document.getElementById('chat-container');
         const teacherName = document.getElementById('teacher-name');
@@ -93,6 +108,66 @@
         }
     </script>
     <style> 
+:root,
+:root.light {
+  --bg-color: #fff;
+  --text-color: rgb(0, 0, 0);
+  --chat-color: #ccc;
+  --chat-border: #eee;
+  --button-bg:  rgb(60, 116, 168);
+  --button-border: rgb(30, 71, 110);
+}
+
+:root.dark {
+  --bg-color: #1d1a2c;
+  --text-color: #ffffff;
+  --chat-color: #2c2745;
+  --chat-border: #0f0d15;
+  --button-bg:  rgb(209, 183, 114);
+  --button-border: rgb(157, 132, 62);
+}
+
+body{
+   background: var(--bg-color);
+   color: var(--text-color);
+}
+.toggle-container {
+  position: relative;
+  width: 10%;
+}
+
+.theme-btn {
+  width: 6em;
+  height: 6em;
+  padding: 0.5em;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+}
+
+.theme-btn img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.theme-btn.light {
+  display: none;
+}
+
+.dark .theme-btn.dark {
+  display: none;
+}
+
+.dark .theme-btn.light {
+  display: block;
+}
+#head{
+    flex-direction: row;
+    display: flex;
+}
+
       .chat-container {
             display: none;
         }
@@ -101,7 +176,7 @@
         overflow-y: scroll;
         margin-bottom: 10px;
         padding: 5px;
-        border: 1px solid #eee;
+        border: 1px solid var(--chat-border);
     }
     #user-message {
             width: 80%;
@@ -115,27 +190,34 @@
      #chat-container {
             width: 70%;
             margin: 20px auto;
-            border: 1px solid #ccc;
+            border: 1px solid var(--chat-color);
             padding: 10px;
         }
         #buttons{
+            margin-left: 10%;
             align-items: center;
-            padding-left: 15% ;
+            width: 80%;
+            flex-wrap: wrap;
+            display:flex;
+            justify-content: center;
         }
     .teacher-btn{
-        margin-left: 5%;
+        margin-left: 12px;
+        margin-top: 5px;
         cursor: pointer;
         height: 30pt;
+        width: 180pt;
         border-width: 2pt;
     }
     h1{
-        margin-left: 33%;
+        margin-left: 25%
     }
     button{
-        background-color: rgb(60, 116, 168);
-        border-color:rgb(30, 71, 110);
-        color: white;
+        background-color: var(--button-bg);
+        border-color:var(--button-border);
+        color: var(--bg-color);
         border-radius: 10px;
+       
     }
     #emoji-btn {
         padding: 8px 3px;
@@ -146,13 +228,13 @@
 .emoji-panel {
     display: none;
     position: absolute;
-    bottom: 60px;
-    background-color: white;
-    border: 1px solid #ccc;
+    bottom: 35px;
+    right: 230px;
+    background-color: var(--bg-color);
+    border: 1px solid var(--chat-color);
     border-radius: 5px;
     padding: 10px;
     flex-wrap: wrap;
-   
     justify-content: center;
 }
 
@@ -161,6 +243,5 @@
     cursor: pointer;
 }
     </style>
-
 </body>
 </html>
