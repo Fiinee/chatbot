@@ -51,18 +51,11 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 def index():
     return render_template("index.html", teachers=TEACHERS)
 
-def generate_chat_id():
-    """Генерирует уникальный ID чата на основе IP + User-Agent."""
-    user_info = f"{request.remote_addr}-{request.user_agent.string}"
-    return hashlib.md5(user_info.encode()).hexdigest()  # Уникальный chat_id
-
 @app.route("/select", methods=["POST"])
 def select_teacher():
     teacher = request.json.get("teacher")
     
     session["teacher"] = teacher
-    session["chat_id"] = generate_chat_id() # Уникальный ID чата
-    CONTEXT_CACHE[session["chat_id"]] = deque(maxlen=30) 
     return jsonify({"message": f"Вы выбрали {teacher}"})
 
 @app.route("/chat", methods=["POST"])
@@ -70,13 +63,8 @@ def chat():
     data = request.json
     user_message = data.get("message", "")
     teacher = session["teacher"]
-    chat_id = session.get("chat_id")
 
-    context = CONTEXT_CACHE.get(chat_id, deque(maxlen=30))
-
-    # Формируем контекст
-    context.append(f"Студент: {user_message}")
-    prompt = f"{TEACHERS[teacher]}\n\n" + "\n".join(context) + "\nПреподаватель:"
+    prompt = f"{TEACHERS[teacher]}\n\nСтудент: {user_message}\nПреподаватель:"
 
     response = requests.post(OLLAMA_URL, json={
         "model": "llama3.2:1b", 
@@ -94,8 +82,6 @@ def chat():
                 continue
         
         if result_text:
-            context.append(f"Преподаватель: {result_text}")  # Добавляем в историю
-            CONTEXT_CACHE[chat_id] = context  # Обновляем историю
             return jsonify({"response": result_text})
         else:
             return jsonify({"error": "Ответ от Ollama пустой"}), 500
