@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, session
 import requests
 import json
 from collections import deque
-import hashlib 
+import os
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
@@ -32,7 +32,7 @@ TEACHERS = {
 
     "teacher4": """You are a head of practice.
     If a student asks a question, tell him to write to the GPT chat. Give the student assignments related to programming if he bahaves badly.
-    When a student asks about SQL, you explain it thoroughly, step by step.""",
+    When a student asks about SQL, you explain it thoroughly, step by step. """,
 
     "teacher5": """You are a funny motion design teacher.
     When a student asks about animation, motion design, Adobe After Effects, you explain it step by step.
@@ -88,6 +88,46 @@ def chat():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@app.route("/upload", methods=["POST"])
+def upload_file():
+    if "file" not in request.files:
+        return jsonify({"error": "Файл не найден"}), 400
+    
+    file = request.files["file"]
+    
+    if file.filename == "":
+        return jsonify({"error": "Файл не выбран"}), 400
+
+    try:
+        file_text = file.read().decode("utf-8")  # Читаем текст из файла
+        teacher = session.get("teacher", "teacher1")  # Получаем текущего учителя
+        prompt = f"{file_text}\n\nПреподаватель:"
+
+        response = requests.post(OLLAMA_URL, json={"model": "llama3.2:1b", "prompt": prompt}, stream=True)
+
+        result_text = ""
+        for line in response.iter_lines():
+            if line:
+                try:
+                    line_data = json.loads(line)
+                    result_text += line_data.get("response", "")
+                except json.JSONDecodeError:
+                    continue
+        
+        if result_text:
+            return jsonify({"response": result_text})
+        else:
+            return jsonify({"error": "Ответ от Ollama пустой"}), 500
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -33,8 +33,11 @@
         <div id="chat-box"></div>
         <input type="text" id="user-message" placeholder="Введите сообщение...">
         <button id="emoji-btn" onclick="toggleEmojiPanel()">=D</button>
-        <button id="send-message">Отправить</button>
-
+    <button id="send-message">Отправить</button>
+<form id="file-form" enctype="multipart/form-data">
+    <input type="file" id="file-input" name="file" accept=".txt">
+    <button type="submit">Отправить файл</button>
+</form>
         <div class="emoji-panel" id="emoji-panel" >
             <span class="emoji" onclick="insertEmoji('😀')">😀</span>
             <span class="emoji" onclick="insertEmoji('😭')">😭</span>
@@ -106,6 +109,35 @@
            userMessageInput.value += emoji;
             toggleEmojiPanel(); 
         }
+
+        
+        document.getElementById("file-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    
+    let fileInput = document.getElementById("file-input");
+    let file = fileInput.files[0];
+    
+    if (!file) return;
+
+    let formData = new FormData();
+    formData.append("file", file);
+    chatBox.innerHTML += `<div><b>Студент загрузил файл:</b> ${file.name}</div>`;
+    fetch("/upload", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.response) {
+            document.getElementById("chat-box").innerHTML += `<div><b>Преподаватель:</b> ${data.response}</div>`;
+        } else if (data.error) {
+            alert(data.error);
+        }
+    });
+});
+
+
+
     </script>
     <style> 
 :root,
@@ -179,7 +211,7 @@ body{
         border: 1px solid var(--chat-border);
     }
     #user-message {
-            width: 80%;
+            width: 75%;
             padding: 8px;
         }
      #send-message {
@@ -228,7 +260,7 @@ body{
 .emoji-panel {
     display: none;
     position: absolute;
-    bottom: 35px;
+    bottom: 30px;
     right: 230px;
     background-color: var(--bg-color);
     border: 1px solid var(--chat-color);

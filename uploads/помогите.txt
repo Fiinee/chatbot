@@ -1,0 +1,7 @@
+
+python -m venv fproject\venv
+
+
+cd fproject
+
+venv\scripts\activate
